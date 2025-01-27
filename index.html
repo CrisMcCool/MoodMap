@@ -6,7 +6,6 @@
     <title>MoodMap</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        /* Reset some default browser styles */
         * {
             margin: 0;
             padding: 0;
@@ -96,7 +95,6 @@
     </div>
 
     <div id="map-container">
-        <!-- Map will be shown here -->
         <div id="mood-map"></div>
     </div>
 
@@ -104,37 +102,69 @@
         <p>Created with love by MoodMap Team</p>
     </footer>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
     <script>
+        // Initialize Supabase
+        const supabase = supabase.createClient('https://your-supabase-url.supabase.co', 'your-public-api-key');
+
         // Initialize map
-        var map = L.map('mood-map').setView([51.505, -0.09], 2); // Set to global view initially
+        var map = L.map('mood-map').setView([51.505, -0.09], 2);
 
         // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Handle adding mood pin on click
-        document.getElementById('addMood').addEventListener('click', function() {
-            let mood = document.getElementById('mood').value;
+        // Fetch and display existing mood pins from Supabase
+        async function loadPins() {
+            const { data, error } = await supabase
+                .from('mood_pins')
+                .select('*');
 
-            // Get the latitude and longitude of the clicked point
-            map.on('click', function(e) {
-                let lat = e.latlng.lat;
-                let lon = e.latlng.lng;
+            if (error) {
+                console.error('Error fetching pins:', error);
+                return;
+            }
 
-                // Create a mood pin (styled element)
-                let pin = L.divIcon({
+            data.forEach(pin => {
+                const mood = pin.mood;
+                const lat = pin.latitude;
+                const lon = pin.longitude;
+
+                let pinIcon = L.divIcon({
                     className: 'mood-pin',
                     html: `<div style="background-color: ${getMoodColor(mood)};"></div>`,
                     iconSize: [30, 30],
                     iconAnchor: [15, 15],
                 });
 
-                // Add the pin to the map
-                L.marker([lat, lon], {icon: pin}).addTo(map);
+                L.marker([lat, lon], { icon: pinIcon }).addTo(map);
+            });
+        }
 
-                // Optionally: Show alert with coordinates
+        loadPins();
+
+        // Handle adding mood pin on click
+        document.getElementById('addMood').addEventListener('click', function () {
+            let mood = document.getElementById('mood').value;
+
+            // Get the latitude and longitude of the clicked point
+            map.on('click', async function (e) {
+                let lat = e.latlng.lat;
+                let lon = e.latlng.lng;
+
+                // Save the new pin to Supabase
+                const { error } = await supabase
+                    .from('mood_pins')
+                    .insert([{ mood, latitude: lat, longitude: lon }]);
+
+                if (error) {
+                    console.error('Error inserting pin:', error);
+                    return;
+                }
+
                 alert(`Mood pinned at: Latitude ${lat}, Longitude ${lon}`);
             });
         });
