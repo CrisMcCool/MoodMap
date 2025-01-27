@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodMap</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        /* Reset some default browser styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 20px;
+        }
+
+        header {
+            background-color: #2e3b4e;
+            color: white;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+        }
+
+        #mood-form {
+            margin: 20px 0;
+        }
+
+        select, button {
+            padding: 10px;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        #map-container {
+            width: 100%;
+            height: 500px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        footer {
+            margin-top: 30px;
+            color: #777;
+        }
+
+        button {
+            background-color: #2e3b4e;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #3a4b66;
+        }
+
+        /* Styling for mood pins */
+        .mood-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .mood-pin:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MoodMap</h1>
+        <p>Pin your mood on the world map! See how others are feeling around the globe.</p>
+    </header>
+    
+    <div id="mood-form">
+        <label for="mood">Select your mood:</label>
+        <select id="mood">
+            <option value="happy">Happy</option>
+            <option value="sad">Sad</option>
+            <option value="stressed">Stressed</option>
+            <option value="excited">Excited</option>
+        </select>
+        <button id="addMood">Pin Mood</button>
+    </div>
+
+    <div id="map-container">
+        <!-- Map will be shown here -->
+        <div id="mood-map"></div>
+    </div>
+
+    <footer>
+        <p>Created with love by MoodMap Team</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize map
+        var map = L.map('mood-map').setView([51.505, -0.09], 2); // Set to global view initially
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Handle adding mood pin on click
+        document.getElementById('addMood').addEventListener('click', function() {
+            let mood = document.getElementById('mood').value;
+
+            // Get the latitude and longitude of the clicked point
+            map.on('click', function(e) {
+                let lat = e.latlng.lat;
+                let lon = e.latlng.lng;
+
+                // Create a mood pin (styled element)
+                let pin = L.divIcon({
+                    className: 'mood-pin',
+                    html: `<div style="background-color: ${getMoodColor(mood)};"></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                });
+
+                // Add the pin to the map
+                L.marker([lat, lon], {icon: pin}).addTo(map);
+
+                // Optionally: Show alert with coordinates
+                alert(`Mood pinned at: Latitude ${lat}, Longitude ${lon}`);
+            });
+        });
+
+        // Function to get the color of the mood pin
+        function getMoodColor(mood) {
+            let colors = {
+                happy: 'yellow',
+                sad: 'blue',
+                stressed: 'red',
+                excited: 'green'
+            };
+            return colors[mood] || 'gray'; // Default to gray if no mood is selected
+        }
+    </script>
+</body>
+</html>
